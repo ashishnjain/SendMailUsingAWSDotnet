@@ -1,0 +1,146 @@
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@{
+    ViewData["Title"] = "Home Page";
+    var emails = Configuration.GetSection("Selectmails").Get<string[]>();
+    //var emailList = emails.Select(x => new SelectListItem() { Text = x.ToString(), Value = x.ToString() }).ToList();
+}
+@section styles{
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" integrity="sha512-/FHUK/LsH78K9XTqsR9hbzr21J8B8RwHR/r8Jv9fzry6NVAOVIGFKQCNINsbhK7a1xubVu2r5QZcz2T9cKpubw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.resMessage))
+{
+    <div class="alert alert-info">
+        @ViewBag.resMessage
+    </div>
+}
+@using (Html.BeginForm("Index", "Home", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal", onsubmit = "handleSubmit()" }))
+{
+    <div class="form-group row">
+        <div class="col-4">
+            <label for="mailFrom" class="col-form-label">Select Mail From</label>
+        </div>
+        <div class="col-8">
+            @Html.DropDownList("mailFrom", new SelectList(emails),"Select Email", new { @class = "form-control", @id = "mailFrom", @required="required" })
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-4">
+            <label for="rbType" class="col-form-label">Contacts</label>
+        </div>
+        <div class="col-6">
+            <input type="file" required name="fm_Contacts" placeholder="Upload Contacts in csv format only" accept=".csv" />
+        </div>
+        <div class="col-2">
+            <a href="~/template/EmailTemplate.csv" class="btn btn-outline-info"><i class="fa fa-download"></i> Template</a>
+        </div>
+    </div>
+    <div class="form-group row d-flex">
+        <div class="col-4">
+            <label for="campaign" class="col-form-label">Campaign</label>
+        </div>
+        <div class="col-8">
+            <input type="text" required name="campaign" id="campaign" class="form-control" />
+        </div>
+
+    </div>
+    <div class="form-group row d-flex">
+        <div class="col-4">
+            <label for="replyTo" class="col-form-label">Reply To</label>
+        </div>
+        <div class="col-8">
+            <input type="text" required name="replyTo" id="replyTo" class="form-control" />
+        </div>
+
+    </div>
+    <div class="form-group row">
+        <div class="col-4">
+            <label for="rbType" class="col-form-label">Type</label>
+        </div>
+        <div class="col-8">
+            <div class="form-check form-check-inline">
+
+                @*<input type="hidden" name="rbType" id="rbType" />*@
+                <input type="radio" checked="checked" onchange="rbTypeChanged(this)" name="rbType" id="rbText" value="Text" title="Text" class="form-check-input" />
+                <label class="form-check-label" for="rbText">Text</label>
+                <input type="radio" onchange="rbTypeChanged(this)" name="rbType" id="rbHTML" value="HTML" title="HTML" class="form-check-input" />
+                <label class="form-check-label" for="rbHTML">HTML</label>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="form-group row d-flex">
+        <div class="col-4">
+            <label for="rbType" class="col-form-label">Subject</label>
+        </div>
+        <div class="col-8">
+            <input type="text" required name="fm_Subject" id="fm_Subject" class="form-control" />
+        </div>
+
+    </div>
+    <div class="form-group row d-flex equal">
+        <div class="col-4">
+            <label for="rbType" class="col-form-label">Content</label>
+        </div>
+        <div class="col-8" style="margin-bottom:2em !important">
+            <input type="hidden" name="fm_Editor" id="fm_Editor" />
+            <div class="form-text" name="formEditor" id="formEditor"></div>
+            <div style="display:none" id="htmlFile">
+                <input type="file" name="fm_htmlFile" accept=".html" />
+            </div>
+            <br />
+        </div>
+
+    </div>
+    <div class="form-group row">
+        <div class="col-4">
+            <label for="rbType" class="col-form-label">Attachments</label>
+        </div>
+        <div class="col-8">
+            <input type="file" name="fm_Attachments" placeholder="Select Single or Multiple Attachments" multiple accept="image/*" />
+        </div>
+
+    </div>
+
+    <div class="form-group row">
+        <div class="col-4">
+
+        </div>
+        <div class="col-8">
+            <input type="submit" name="Uploads" value="Submit" class="btn btn-info" />
+        </div>
+
+    </div>
+}
+
+@section Scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js" integrity="sha512-P2W2rr8ikUPfa31PLBo5bcBQrsa+TNj8jiKadtaIrHQGMo6hQM6RdPjQYxlNguwHz8AwSQ28VkBK6kHBLgd/8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        var quill = new Quill('#formEditor', {
+            theme: 'snow'
+        });
+        function rbTypeChanged(e) {
+            var title = $(e).attr("title");
+            console.log(title);
+            if (title == "Text") {
+                $(".ql-toolbar").show();
+                $("#formEditor").show();
+                $("#htmlFile").hide();
+            }
+            else {
+                //quill.enable(true);
+                $(".ql-toolbar").hide();
+                $("#formEditor").hide();
+                $("#htmlFile").show();
+            }
+        }
+        function handleSubmit() {
+            console.info('handleSubmit called');
+            document.getElementById('fm_Editor').value = quill.root.innerHTML;
+        };
+    </script>
+}

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_PublishTargetUrl>D:\Published Applications\BulkMailNBL</_PublishTargetUrl>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="DefaultConnection">
+      <Value>server=localhost%3bport=3306%3buser=root%3bpassword=ProEx%402013%3bdatabase=db_bulkmail</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+</Project>

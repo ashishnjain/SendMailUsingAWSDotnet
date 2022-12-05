@@ -1,0 +1,82 @@
+﻿@model IEnumerable<SendMailforAWSorSMTP.Models.EmailLogs>
+
+@{
+    ViewData["Title"] = "ReadAllRecords";
+
+}
+@section styles{
+    <link href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+}
+@section Scripts{
+    <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.4/js/dataTables.bootstrap4.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#records').DataTable();
+        });
+    </script>
+}
+<h1>Records of all mails sent</h1>
+<div class="table-responsive">
+    <table class="table compact table-sm" id="records">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Email)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Message)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.MessageID)
+                </th>
+                @*<th>
+                    @Html.DisplayNameFor(model => model.isDelivered)
+                </th>*@
+                <th>
+                    @Html.DisplayNameFor(model => model.sentOn)
+                </th>
+                @*<th>
+                    @Html.DisplayNameFor(model => model.deliveredOn)
+                </th>*@
+                <th>
+                    @Html.DisplayNameFor(model => model.replyTo)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Email)
+                    </td>
+                    <td>
+                        @Html.Raw(item.Message)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.MessageID)
+                    </td>
+                    @*<td>
+                        @Html.DisplayFor(modelItem => item.isDelivered)
+                    </td>*@
+                    <td>
+                        @Html.DisplayFor(modelItem => item.sentOn)
+                    </td>
+                    @*<td>
+                        @Html.DisplayFor(modelItem => item.deliveredOn)
+                    </td>*@
+                    <td>
+                        @Html.DisplayFor(modelItem => item.replyTo)
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
