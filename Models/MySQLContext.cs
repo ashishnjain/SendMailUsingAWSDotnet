@@ -28,7 +28,7 @@ namespace SendMailforAWSorSMTP.Models
                 {
                     if (conn.State == System.Data.ConnectionState.Closed)
                         conn.Open();
-                    MySqlCommand cmd = new MySqlCommand("select * from t_emaillogs", conn);
+                    MySqlCommand cmd = new MySqlCommand("SELECT max(sentOn) as senton,count(id) as counts,campaign FROM t_emaillogs group by campaign order by 1 desc limit 1000", conn);
                     using (var reader = cmd.ExecuteReader())
                     {
                         while(reader.Read())
@@ -36,13 +36,13 @@ namespace SendMailforAWSorSMTP.Models
                             emailLogs.Add(new EmailLogs()
                             {
                                 //deliveredOn = Convert.ToDateTime(reader["deliveredOn"]),
-                                Email = reader["email"].ToString(),
+                                Email = reader["counts"].ToString(),
                                 //isDelivered = Convert.ToBoolean(reader["isDelivered"]),
-                                Message = reader["message"].ToString(),
-                                MessageID = reader["messageId"].ToString(),
-                                Name = reader["name"].ToString(),
-                                replyTo = reader["replyTo"].ToString(),
-                                sentOn = Convert.ToDateTime(reader["sentOn"])
+                                Message = reader["campaign"].ToString(),
+                                // MessageID = reader["messageId"].ToString(),
+                                // Name = reader["name"].ToString(),
+                                // replyTo = reader["replyTo"].ToString(),
+                                sentOn = Convert.ToDateTime(reader["senton"])
                             });
                         }
                     }
@@ -75,6 +75,41 @@ namespace SendMailforAWSorSMTP.Models
                 throw;
             }
             return true;
+        }
+        public List<EmailLogs> GetCampaignLogs(string campaign)
+        {
+            List<EmailLogs> emailLogs = new List<EmailLogs>();
+            try
+            {
+                using(MySqlConnection conn = GetConnection())
+                {
+                    if (conn.State == System.Data.ConnectionState.Closed)
+                        conn.Open();
+                    MySqlCommand cmd = new MySqlCommand("SELECT name,email,senton,messageId,replyTo FROM t_emaillogs where campaign='"+campaign+"' order by id desc ", conn);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while(reader.Read())
+                        {
+                            emailLogs.Add(new EmailLogs()
+                            {
+                                //deliveredOn = Convert.ToDateTime(reader["deliveredOn"]),
+                                Email = reader["email"].ToString(),
+                                //isDelivered = Convert.ToBoolean(reader["isDelivered"]),
+                                Message = campaign,
+                                MessageID = reader["messageId"].ToString(),
+                                Name = reader["name"].ToString(),
+                                replyTo = reader["replyTo"].ToString(),
+                                sentOn = Convert.ToDateTime(reader["senton"])
+                            });
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+            return emailLogs;
         }
     }
 }

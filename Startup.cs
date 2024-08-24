@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,25 @@ namespace SendMailforAWSorSMTP
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
+            services.Configure<CookiePolicyOptions>(options =>
+            {
+                // This lambda determines whether user consent for non-essential cookies is needed for a given request.  
+                options.CheckConsentNeeded = context => true;
+                options.MinimumSameSitePolicy = SameSiteMode.None;
+                
+            });
+            services.ConfigureApplicationCookie(options=>{
+                options.AccessDeniedPath=new PathString("Home/Error");
+                options.Cookie.Name="BulkEMSender";
+                options.Cookie.HttpOnly=true;
+                options.ExpireTimeSpan=TimeSpan.FromDays(30);
+                options.LoginPath=new PathString("/Home/Login");
+                options.LogoutPath=new PathString("/Home/LogOut");
+                options.ReturnUrlParameter=CookieAuthenticationDefaults.ReturnUrlParameter;
+                options.SlidingExpiration=true;
+            });
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+            
             services.Add(new ServiceDescriptor(typeof(MySQLContext), new MySQLContext(Configuration.GetConnectionString("DefaultConnection"))));
         }
 
@@ -45,11 +66,13 @@ namespace SendMailforAWSorSMTP
             app.UseStaticFiles();
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllerRoute(name: "login",
+              pattern: "{controller=Home}/{action=Login}/{id?}");
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");

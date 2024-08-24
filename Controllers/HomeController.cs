@@ -7,16 +7,25 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using SendMailforAWSorSMTP;
+using HtmlAgilityPack;
+//using SendMailforAWSorSMTP;
 using System.IO;
 using System.Net.Mail;
 using CsvHelper;
 using System.Globalization;
 using SendMailFromAWSorSMTP.Helper;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using System.Net;
+using System.Web;
+using System.Text;
 
 namespace SendMailforAWSorSMTP.Controllers
 {
+    [Authorize(Roles ="Admin, Member")]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -28,6 +37,41 @@ namespace SendMailforAWSorSMTP.Controllers
             _config = configuration;
         }
 
+        [AllowAnonymous]
+        public IActionResult Login()
+        {
+            return View();
+        }
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> Login(string Email, string Password)
+        {
+            ClaimsIdentity identity = null;
+            bool isAuthenticated = false;
+            if (Email == "Administrator" && Password=="Nbl#2019$")
+            {
+                identity = new ClaimsIdentity(new[] {
+                    new Claim(ClaimTypes.Name,Email),
+                    new Claim(ClaimTypes.Role,"Admin")
+                }, CookieAuthenticationDefaults.AuthenticationScheme);
+                isAuthenticated = true;
+            }
+            else if(Email=="sales@naapbooks.in" && Password=="ProEx#2013$Nbl")
+            {
+                identity = new ClaimsIdentity(new[] {
+                    new Claim(ClaimTypes.Name,Email),
+                    new Claim(ClaimTypes.Role,"Member")
+                }, CookieAuthenticationDefaults.AuthenticationScheme);
+                isAuthenticated = true;
+            }
+            if(isAuthenticated)
+            {
+                var principal = new ClaimsPrincipal(identity);
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,new ClaimsPrincipal(principal));
+                return RedirectToAction("Index", "Home");
+            }
+            return View();
+        }
         public IActionResult Index()
         {
             ViewBag.resMessage = "";
@@ -35,8 +79,9 @@ namespace SendMailforAWSorSMTP.Controllers
         }
 
         [HttpPost]
-        public IActionResult Index(IFormCollection form, IFormFile fm_htmlFile, ICollection<IFormFile> fm_Attachments, IFormFile fm_Contacts)
+        public IActionResult Index(IFormCollection form, IFormFile fm_htmlFile, ICollection<IFormFile> fm_Attachments, IFormFile fm_Contacts, string SendSMS)
         {
+
             string returnMessage= string.Empty;
             string message = string.Empty;
             List<Attachment> attachments = new List<Attachment>();
@@ -94,6 +139,34 @@ namespace SendMailforAWSorSMTP.Controllers
                                 newmessage = newmessage.Replace("{{var8}}", item.var7);
                                 newmessage = newmessage.Replace("{{var9}}", item.var8);
                                 newmessage = newmessage.Replace("{{var10}}", item.var10);
+                                newmessage= newmessage.Replace("</p>","</p>\n");
+                                if(!string.IsNullOrEmpty(SendSMS))
+                                {
+                                    string result = "";
+                                    String url = "";
+                                    string userid = "2000186085";
+                                    string passwd = "gkoCNjbta";
+                                    WebRequest request = null;
+                                    HttpWebResponse response = null;
+                                    HtmlDocument node = new HtmlDocument();
+                                    node.LoadHtml(newmessage.Replace("<br>","\n").Replace("\n\n","\n"));
+                                    newmessage=node.DocumentNode.InnerText;
+                                    newmessage = HttpUtility.UrlEncode(newmessage);
+                                    url = "https://enterprise.smsgupshup.com/GatewayAPI/rest?msg=" + newmessage + "&v=1.1&userid=" + userid + "&password=" + passwd + "&send_to=91" + item.Mobile + "&msg_type=text&method=sendMessage&mask="+form["fm_Mask"];
+                                    request = WebRequest.Create(url);
+                                    response = (HttpWebResponse)request.GetResponse();
+                                    Stream webstream = response.GetResponseStream();
+                                    Encoding ec = System.Text.Encoding.GetEncoding("utf-8");
+                                    StreamReader reader = new System.IO.StreamReader(webstream, ec);
+                                    result = reader.ReadToEnd();
+                                    reader.Close();
+                                    webstream.Close();
+                                    count++;                
+
+                                }
+                                else
+                                {
+                                
                                 AmazonSESService service = new AmazonSESService(form["mailFrom"],item.Email, form["fm_Subject"], newmessage, attachments, _config,null, form["replyTo"]);
                                 var sent = service.SendMail();
                                 if (sent != "error")
@@ -113,6 +186,8 @@ namespace SendMailforAWSorSMTP.Controllers
                                     context.SaveEmailLog(email);
                                     count++;
                                 }
+
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -121,7 +196,7 @@ namespace SendMailforAWSorSMTP.Controllers
                         }
                     }
                 }
-                returnMessage = "Email Sent to " + count + " Contacts";
+                returnMessage = "Campaign Sent to " + count + " Contacts";
             }
             else
             {
@@ -141,12 +216,26 @@ namespace SendMailforAWSorSMTP.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-
+        [Authorize(Roles ="Admin")]
         public IActionResult ReadAllRecords()
         {
             var model = new List<EmailLogs>();
             MySQLContext context = HttpContext.RequestServices.GetService(typeof(MySQLContext)) as MySQLContext;
             model = context.GetEmailLogs();
+            return View(model);
+        }
+
+        public async Task<IActionResult> LogOut()
+        {
+            await HttpContext.SignOutAsync();
+            return RedirectToAction("Login", "Home");
+        }
+        [Authorize(Roles ="Admin")]
+        public IActionResult GetCampaignDetails(string campaign)
+        {
+            var model = new List<EmailLogs>();
+            MySQLContext context = HttpContext.RequestServices.GetService(typeof(MySQLContext)) as MySQLContext;
+            model = context.GetCampaignLogs(campaign);
             return View(model);
         }
     }

@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SendMailforAWSorSMTP.Models.EmailLogs>
+@model IEnumerable<SendMailforAWSorSMTP.Models.EmailLogs>
 
 @{
     ViewData["Title"] = "ReadAllRecords";
@@ -16,21 +16,17 @@
         });
     </script>
 }
-<h1>Records of all mails sent</h1>
+<p>Records of all mails sent in Campaign: <span class="h3">@Model.FirstOrDefault().Message</span></p>
 <div class="table-responsive">
     <table class="table compact table-sm" id="records">
         <thead>
             <tr>
                 <th>Sr. No</th>
-                <th>
-                    SentOn
-                </th>
-                <th>
-                    Campaign Name
-                </th>
-                <th>
-                    Mail Sent
-                </th>
+                <th>SentOn</th>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Reply To</th>
+                <th>MessageID</th>
                 <th></th>
             </tr>
         </thead>
@@ -45,14 +41,18 @@
                         @Html.DisplayFor(modelItem => item.sentOn)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Message)
+                        @Html.DisplayFor(modelItem => item.Email)
                     </td>
                     <td>
-                        @Html.Raw(item.Email)
+                        @Html.DisplayFor(modelItem => item.Name)
                     </td>
                     <td>
-                        @Html.ActionLink("Details","GetCampaignDetails","Home",new{campaign=item.Message},null)
+                        @Html.DisplayFor(modelItem => item.replyTo)
                     </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.MessageID)
+                    </td>
+                    <td></td>
                 </tr>
             }
         </tbody>

@@ -23,7 +23,7 @@
             <label for="mailFrom" class="col-form-label">Select Mail From</label>
         </div>
         <div class="col-8">
-            @Html.DropDownList("mailFrom", new SelectList(emails),"Select Email", new { @class = "form-control", @id = "mailFrom", @required="required" })
+            @Html.DropDownList("mailFrom", new SelectList(emails),"Select Email", new { @class = "form-control", @id = "mailFrom"  })
         </div>
     </div>
     <div class="form-group row">
@@ -42,7 +42,16 @@
             <label for="campaign" class="col-form-label">Campaign</label>
         </div>
         <div class="col-8">
-            <input type="text" required name="campaign" id="campaign" class="form-control" />
+            <input type="text" name="campaign" id="campaign" class="form-control" />
+        </div>
+
+    </div>
+    <div class="form-group row d-flex">
+        <div class="col-4">
+            <label for="campaign" class="col-form-label">Message Mask</label>
+        </div>
+        <div class="col-8">
+            <input type="text" name="fm_Mask" id="fm_Mask" class="form-control" />
         </div>
 
     </div>
@@ -51,7 +60,7 @@
             <label for="replyTo" class="col-form-label">Reply To</label>
         </div>
         <div class="col-8">
-            <input type="text" required name="replyTo" id="replyTo" class="form-control" />
+            <input type="text" name="replyTo" id="replyTo" class="form-control" />
         </div>
 
     </div>
@@ -111,7 +120,8 @@
 
         </div>
         <div class="col-8">
-            <input type="submit" name="Uploads" value="Submit" class="btn btn-info" />
+            <input type="submit" name="Uploads" value="Send Email" class="btn btn-info" />
+            <input type="submit" name="SendSMS" value="Send SMS" class="btn btn-info" />
         </div>
 
     </div>
@@ -139,7 +149,9 @@
             }
         }
         function handleSubmit() {
+            
             console.info('handleSubmit called');
+
             document.getElementById('fm_Editor').value = quill.root.innerHTML;
         };
     </script>
