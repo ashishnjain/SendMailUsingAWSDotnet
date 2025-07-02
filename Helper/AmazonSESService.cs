@@ -11,6 +11,8 @@ using System.Linq;
 using System.Net.Mail;
 using System.Web;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using System.Net;
 
 namespace SendMailFromAWSorSMTP.Helper
 {
@@ -78,7 +80,7 @@ namespace SendMailFromAWSorSMTP.Helper
         /// <param name="subject">The subject.</param>
         /// <param name="htmlBody">The HTML body.</param>
         /// <param name="attachment">The attachment.</param>
-        public AmazonSESService(string fromAddress,string toAddress, string subject, string htmlBody, List<Attachment> attachments, IConfiguration configuration, string[] BCCAddress = null, string replyToEmail = "")
+        public AmazonSESService(string fromAddress, string toAddress, string subject, string htmlBody, List<Attachment> attachments, IConfiguration configuration, string[] BCCAddress = null, string replyToEmail = "")
         {
             ToAddress = toAddress;
             Subject = subject;
@@ -148,48 +150,107 @@ namespace SendMailFromAWSorSMTP.Helper
             return message;
         }
 
-        /// <summary>
-        /// Sends the mail.
-        /// </summary>
-        /// <returns></returns>
         public string SendMail()
         {
-            string resMessage = string.Empty;
+            string resMesage;
             try
             {
                 string accessKey = Convert.ToString(_config.GetSection("AWS").GetSection("accessKey").Value);
                 string secretKey = Convert.ToString(_config.GetSection("AWS").GetSection("secretKey").Value);
-
-                var message = SESMessage();
-                var stream = new MemoryStream();
-
-                message.WriteTo(stream);
-
-                AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-
-                using (var client = new AmazonSimpleEmailServiceClient(credentials, RegionEndpoint.APSouth1))
+                var client = new SmtpClient("email-smtp.ap-south-1.amazonaws.com", 587)
                 {
-                    RawMessage rawMessage = new RawMessage();
-                    rawMessage.Data = stream;
-                    var request = new SendRawEmailRequest(rawMessage);
-                    var response = client.SendRawEmailAsync(request);
-                    resMessage = response.Result.MessageId;
+                    Credentials = new NetworkCredential(accessKey, secretKey),
+                    EnableSsl = true
+                };
+                var fromAddress = new MailAddress(FromAddress);
+                MailMessage message = new MailMessage();
+                if (Attachments != null)
+                {
+                    foreach (var att in Attachments)
+                    {
+                        message.Attachments.Add(att);
+                    }
+                    // System.Net.Mime.ContentType htmltype = new System.Net.Mime.ContentType("text/html");
+
+                    // System.Net.Mime.ContentType contype = new System.Net.Mime.ContentType("text/calendar");
+                    // contype.Parameters.Add("method", "REQUEST");
+                    // //  contype.Parameters.Add("name", "Meeting.ics");
+                    // AlternateView avHtml = AlternateView.CreateAlternateViewFromString(body, htmltype);
+                    // AlternateView avCal = AlternateView.CreateAlternateViewFromString(icalMessage, contype);
+                    // message.AlternateViews.Add(avHtml);
+                    // message.AlternateViews.Add(avCal);
+                    // message.Headers.Add("Content-class", "urn:content-classes:calendarmessage");
                 }
-                
+                var headerId = Guid.NewGuid().ToString();
+                message.Headers.Add("Identity", headerId);
+                message.Body = HTMLBody;
+                message.Subject = Subject;
+                message.From = fromAddress;
+                message.IsBodyHtml = true;
+                message.To.Add(ToAddress);
+                client.EnableSsl = true;
+                client.Send(message);                
+                resMesage = headerId;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                //ErrorLog(e.Message);
-                //ErrorLog(e.StackTrace);
-                if (e.InnerException != null)
-                {
-                    //ErrorLog(e.InnerException.Message);
-                    //ErrorLog(e.InnerException.StackTrace);
-                }
-                resMessage= "error";
+                resMesage = "error";
             }
-            return resMessage;
-
+            return resMesage;
+            
         }
+
+        /// <summary>
+        /// Sends the mail.
+        /// </summary>
+        /// <returns></returns>
+        // public async Task<string> SendMail()
+        // {
+        //     string resMessage = string.Empty;
+        //     try
+        //     {
+        //         string accessKey = Convert.ToString(_config.GetSection("AWS").GetSection("accessKey").Value);
+        //         string secretKey = Convert.ToString(_config.GetSection("AWS").GetSection("secretKey").Value);
+
+        //         // var message = SESMessage();
+        //         // var stream = new MemoryStream();
+
+        //         // message.WriteTo(stream);
+        // // var destination = new Destination(new List<string> { ToAddress });
+
+        //         // AWSCredentials credentials = new AWSCredentials(accessKey, secretKey);
+
+        //         using (var client = new AmazonSimpleEmailServiceClient(accessKey,secretKey, RegionEndpoint.APSouth1))
+        //         {
+        //             Message rawMessage = new Message()
+        //             {
+        //                 Body = new Body { Html = new Content { Data = HTMLBody, Charset="UTF-8"} },
+        //                 Subject = new Content(Subject)
+        //             };
+        //             Destination destination = new Destination { ToAddresses = new List<string>() { "ToAddress"} };
+        //             // rawMessage.Data = stream;
+        //             var request = new SendEmailRequest("abhishek@religocapital.com", destination, rawMessage);
+        //             var response = await client.SendEmailAsync(request);
+        //             resMessage = response.MessageId;
+        //             // var request = new SendRawEmailRequest(rawMessage);
+        //             // var response = client.SendRawEmailAsync(request);
+        //             // resMessage = response.Result.MessageId;
+        //         }
+
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         // ErrorLog(e.Message);
+        //         //ErrorLog(e.StackTrace);
+        //         if (e.InnerException != null)
+        //         {
+        //             //ErrorLog(e.InnerException.Message);
+        //             //ErrorLog(e.InnerException.StackTrace);
+        //         }
+        //         resMessage= "error";
+        //     }
+        //     return resMessage;
+
+        // }
     }
 }
